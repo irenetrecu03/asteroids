@@ -17,6 +17,10 @@ background = pygame.transform.scale(background, (WIDTH, HEIGHT))
 spaceship = pygame.image.load("assets/spaceship.png").convert_alpha()
 spaceship = pygame.transform.scale(spaceship, (50, 50))
 
+# image by DinosoftLabs
+asteroid = pygame.image.load("assets/asteroid.png").convert_alpha()
+asteroid = pygame.transform.scale(asteroid, (60, 60))
+
 # Colors
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -77,12 +81,13 @@ class Bullet:
 
 # Asteroid class
 class Asteroid:
-    def __init__(self):
+    def __init__(self, image):
         self.x = random.randint(0, WIDTH)
         self.y = random.randint(0, HEIGHT)
         self.vel_x = random.uniform(-1.5, 1.5)
         self.vel_y = random.uniform(-1.5, 1.5)
         self.size = random.randint(15, 40)
+        self.img = pygame.transform.scale(image, (self.size * 2, self.size * 2))
 
     def move(self):
         self.x += self.vel_x
@@ -91,12 +96,13 @@ class Asteroid:
         self.y %= HEIGHT
 
     def draw(self):
-        pygame.draw.circle(screen, WHITE, (int(self.x), int(self.y)), self.size)
+        rect = self.img.get_rect(center=(self.x, self.y))
+        screen.blit(self.img, rect.topleft)
 
 # Game setup
 ship = Ship(spaceship)
 bullets = []
-asteroids = [Asteroid() for _ in range(5)]
+asteroids = [Asteroid(asteroid) for _ in range(5)]
 
 running = True
 while running:
