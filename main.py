@@ -23,6 +23,8 @@ class Ship:
 
         self.vel_x = 0
         self.vel_y = 0
+        # self.dir_x = 0
+        # self.dir_y = -1
 
     def rotate(self, direction):
         self.angle += direction * 5  # degrees
@@ -31,6 +33,8 @@ class Ship:
         rad = math.radians(self.angle)
         self.vel_x += math.cos(rad) * 0.2
         self.vel_y += math.sin(rad) * 0.2
+        # self.vel_x += self.dir_x * self.speed
+        # self.vel_y += self.dir_y * self.speed
 
     def move(self):
         self.x += self.vel_x
@@ -39,6 +43,8 @@ class Ship:
         # Screen wrap-around
         self.x %= WIDTH
         self.y %= HEIGHT
+        self.vel_x *= 0.9
+        self.vel_y *= 0.9
 
     def draw(self):
         rad = math.radians(self.angle)
