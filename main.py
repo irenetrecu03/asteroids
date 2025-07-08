@@ -9,13 +9,22 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Asteroids")
 clock = pygame.time.Clock()
 
+# image by Kai Pilger
+background = pygame.image.load("assets/space-background.jpg")
+background = pygame.transform.scale(background, (WIDTH, HEIGHT))
+
+# image by manshagraphicss
+spaceship = pygame.image.load("assets/spaceship.png").convert_alpha()
+spaceship = pygame.transform.scale(spaceship, (50, 50))
+
 # Colors
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
 # Ship class
 class Ship:
-    def __init__(self):
+    def __init__(self, image):
+        self.img = image
         self.x = WIDTH // 2
         self.y = HEIGHT // 2
         self.angle = 0
@@ -30,11 +39,9 @@ class Ship:
         self.angle += direction * 5  # degrees
 
     def thrust(self):
-        rad = math.radians(self.angle)
+        rad = math.radians(self.angle - 90)
         self.vel_x += math.cos(rad) * 0.2
         self.vel_y += math.sin(rad) * 0.2
-        # self.vel_x += self.dir_x * self.speed
-        # self.vel_y += self.dir_y * self.speed
 
     def move(self):
         self.x += self.vel_x
@@ -47,14 +54,10 @@ class Ship:
         self.vel_y *= 0.9
 
     def draw(self):
-        rad = math.radians(self.angle)
-        point1 = (self.x + math.cos(rad) * 20, self.y + math.sin(rad) * 20)
-        rad_left = math.radians(self.angle + 140)
-        rad_right = math.radians(self.angle - 140)
-        point2 = (self.x + math.cos(rad_left) * 20, self.y + math.sin(rad_left) * 20)
-        point3 = (self.x + math.cos(rad_right) * 20, self.y + math.sin(rad_right) * 20)
-
-        pygame.draw.polygon(screen, WHITE, [point1, point2, point3])
+        # rotate the image
+        rotated_image = pygame.transform.rotate(self.img, -self.angle)  # negative because pygame y-axis is inverted
+        rect = rotated_image.get_rect(center=(self.x, self.y))
+        screen.blit(rotated_image, rect.topleft)
 
 # Bullet class
 class Bullet:
@@ -91,14 +94,14 @@ class Asteroid:
         pygame.draw.circle(screen, WHITE, (int(self.x), int(self.y)), self.size)
 
 # Game setup
-ship = Ship()
+ship = Ship(spaceship)
 bullets = []
 asteroids = [Asteroid() for _ in range(5)]
 
 running = True
 while running:
     clock.tick(60)  # 60 FPS
-    screen.fill(BLACK)
+    screen.blit(background, (0, 0))
 
     # Input
     for event in pygame.event.get():
