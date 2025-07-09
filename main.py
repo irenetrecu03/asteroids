@@ -65,7 +65,7 @@ class Bullet:
         self.y += self.vel_y
 
     def draw(self):
-        pygame.draw.circle(screen, WHITE, (int(self.x), int(self.y)), 2)
+        pygame.draw.circle(screen, WHITE, (int(self.x), int(self.y)), 4)
 
 # Asteroid class
 class Asteroid:
@@ -109,23 +109,28 @@ while running:
     clock.tick(60)
     screen.blit(background, (0, 0))
 
+    keys = pygame.key.get_pressed()
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-
-    keys = pygame.key.get_pressed()
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE and not GAMEOVER:
+                if len(bullets) < 5:
+                    bullets.append(Bullet(ship.x, ship.y, ship.angle - 90))
+            elif event.key == RESTART_KEY and GAMEOVER:
+                # Reset game
+                GAMEOVER = False
+                ship = Ship(spaceship)
+                bullets = []
+                asteroids = [Asteroid(asteroid_img) for _ in range(5)]
+                SCORE = 0
 
     if not GAMEOVER:
         # Input
-        if keys[pygame.K_LEFT]:
-            ship.rotate(-1)
-        if keys[pygame.K_RIGHT]:
-            ship.rotate(1)
-        if keys[pygame.K_UP]:
-            ship.thrust()
-        if keys[pygame.K_SPACE]:
-            if len(bullets) < 5:
-                bullets.append(Bullet(ship.x, ship.y, ship.angle - 90))
+        if keys[pygame.K_LEFT]: ship.rotate(-1)
+        if keys[pygame.K_RIGHT]: ship.rotate(1)
+        if keys[pygame.K_UP]: ship.thrust()
 
         # Update
         ship.move()
@@ -134,17 +139,18 @@ while running:
             if bullet.x < 0 or bullet.x > WIDTH or bullet.y < 0 or bullet.y > HEIGHT:
                 bullets.remove(bullet)
 
-        for asteroid in asteroids[:]:
+        for ast_idx, asteroid in enumerate(asteroids[:]):
             asteroid.move()
 
             # bullet-asteroid collision check
-            for bullet in bullets[:]:
+            for bullet_idx, bullet in enumerate(bullets[:]):
                 dist_bullet_asteroid = math.hypot(asteroid.x - bullet.x, asteroid.y - bullet.y)
                 if dist_bullet_asteroid < 20 + asteroid.size:
                     SCORE += asteroid.score
-                    asteroids.remove(asteroid)
+                    # remove asteroid
+                    del asteroids[ast_idx]
                     # remove bullet
-                    bullets.remove(bullet)
+                    del bullets[bullet_idx]
                     # add a new asteroid
                     asteroids.append(Asteroid(asteroid_img))
                     break
@@ -172,14 +178,6 @@ while running:
         restart_text = small_font.render("Press Enter to restart", True, WHITE)
         restart_rect = restart_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 50))
         screen.blit(restart_text, restart_rect)
-
-        if keys[RESTART_KEY]:
-            # Reset game if Enter if pressed
-            GAMEOVER = False
-            ship = Ship(spaceship)
-            bullets = []
-            asteroids = [Asteroid(asteroid_img) for _ in range(5)]
-            SCORE = 0
 
     score_font = pygame.font.SysFont("monospace", 30)
     score_text = score_font.render(f"Score: {SCORE}", True, WHITE)
