@@ -9,20 +9,15 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Asteroids")
 clock = pygame.time.Clock()
 
-# image by Kai Pilger
+# Assets
 background = pygame.image.load("assets/space-background.jpg")
 background = pygame.transform.scale(background, (WIDTH, HEIGHT))
 
-# image by manshagraphicss
 spaceship = pygame.image.load("assets/spaceship.png").convert_alpha()
 spaceship = pygame.transform.scale(spaceship, (50, 50))
 
-# image by DinosoftLabs
-asteroid = pygame.image.load("assets/asteroid.png").convert_alpha()
-asteroid = pygame.transform.scale(asteroid, (60, 60))
+asteroid_img = pygame.image.load("assets/asteroid.png").convert_alpha()
 
-# Colors
-BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
 # Ship class
@@ -32,15 +27,11 @@ class Ship:
         self.x = WIDTH // 2
         self.y = HEIGHT // 2
         self.angle = 0
-        self.speed = 0
-
         self.vel_x = 0
         self.vel_y = 0
-        # self.dir_x = 0
-        # self.dir_y = -1
 
     def rotate(self, direction):
-        self.angle += direction * 5  # degrees
+        self.angle += direction * 5
 
     def thrust(self):
         rad = math.radians(self.angle - 90)
@@ -50,16 +41,13 @@ class Ship:
     def move(self):
         self.x += self.vel_x
         self.y += self.vel_y
-
-        # Screen wrap-around
         self.x %= WIDTH
         self.y %= HEIGHT
         self.vel_x *= 0.9
         self.vel_y *= 0.9
 
     def draw(self):
-        # rotate the image
-        rotated_image = pygame.transform.rotate(self.img, -self.angle)  # negative because pygame y-axis is inverted
+        rotated_image = pygame.transform.rotate(self.img, -self.angle)
         rect = rotated_image.get_rect(center=(self.x, self.y))
         screen.blit(rotated_image, rect.topleft)
 
@@ -82,12 +70,12 @@ class Bullet:
 # Asteroid class
 class Asteroid:
     def __init__(self, image):
+        self.size = random.randint(15, 40)
+        self.img = pygame.transform.scale(image, (self.size*2, self.size*2))
         self.x = random.randint(0, WIDTH)
         self.y = random.randint(0, HEIGHT)
         self.vel_x = random.uniform(-1.5, 1.5)
         self.vel_y = random.uniform(-1.5, 1.5)
-        self.size = random.randint(15, 40)
-        self.img = pygame.transform.scale(image, (self.size * 2, self.size * 2))
 
     def move(self):
         self.x += self.vel_x
@@ -102,38 +90,48 @@ class Asteroid:
 # Game setup
 ship = Ship(spaceship)
 bullets = []
-asteroids = [Asteroid(asteroid) for _ in range(5)]
+asteroids = [Asteroid(asteroid_img) for _ in range(5)]
+
+GAMEOVER = False
 
 running = True
 while running:
-    clock.tick(60)  # 60 FPS
+    clock.tick(60)
     screen.blit(background, (0, 0))
 
-    # Input
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT]:
-        ship.rotate(-1)
-    if keys[pygame.K_RIGHT]:
-        ship.rotate(1)
-    if keys[pygame.K_UP]:
-        ship.thrust()
-    if keys[pygame.K_SPACE]:
-        if len(bullets) < 5:  # limit bullets
-            bullets.append(Bullet(ship.x, ship.y, ship.angle))
+    if not GAMEOVER:
+        # Input
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT]:
+            ship.rotate(-1)
+        if keys[pygame.K_RIGHT]:
+            ship.rotate(1)
+        if keys[pygame.K_UP]:
+            ship.thrust()
+        if keys[pygame.K_SPACE]:
+            if len(bullets) < 5:
+                bullets.append(Bullet(ship.x, ship.y, ship.angle - 90))
 
-    # Update
-    ship.move()
-    for bullet in bullets[:]:
-        bullet.move()
-        if bullet.x < 0 or bullet.x > WIDTH or bullet.y < 0 or bullet.y > HEIGHT:
-            bullets.remove(bullet)
+        # Update
+        ship.move()
+        for bullet in bullets[:]:
+            bullet.move()
+            if bullet.x < 0 or bullet.x > WIDTH or bullet.y < 0 or bullet.y > HEIGHT:
+                bullets.remove(bullet)
 
-    for asteroid in asteroids:
-        asteroid.move()
+        for asteroid in asteroids:
+            asteroid.move()
+
+        # Collision check
+        for asteroid in asteroids:
+            dist = math.hypot(ship.x - asteroid.x, ship.y - asteroid.y)
+            if dist < 25 + asteroid.size:
+                GAMEOVER = True
+                break
 
     # Draw
     ship.draw()
@@ -141,6 +139,12 @@ while running:
         bullet.draw()
     for asteroid in asteroids:
         asteroid.draw()
+
+    if GAMEOVER:
+        font = pygame.font.SysFont("monospace", 60, bold=True)
+        text = font.render("GAME OVER", True, (255, 0, 0))
+        rect = text.get_rect(center=(WIDTH//2, HEIGHT//2))
+        screen.blit(text, rect)
 
     pygame.display.flip()
 
