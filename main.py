@@ -74,8 +74,10 @@ class Asteroid:
         self.img = pygame.transform.scale(image, (self.size*2, self.size*2))
         self.x = random.randint(0, WIDTH)
         self.y = random.randint(0, HEIGHT)
-        self.vel_x = random.uniform(-1.5, 1.5)
-        self.vel_y = random.uniform(-1.5, 1.5)
+        speed = random.uniform(1.5, 2.0)
+        angle = random.uniform(0, 2 * math.pi)
+        self.vel_x = math.cos(angle) * speed
+        self.vel_y = math.sin(angle) * speed
 
     def move(self):
         self.x += self.vel_x
@@ -93,6 +95,7 @@ bullets = []
 asteroids = [Asteroid(asteroid_img) for _ in range(5)]
 
 GAMEOVER = False
+RESTART_KEY = pygame.K_RETURN
 
 running = True
 while running:
@@ -103,9 +106,10 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
+    keys = pygame.key.get_pressed()
+
     if not GAMEOVER:
         # Input
-        keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
             ship.rotate(-1)
         if keys[pygame.K_RIGHT]:
@@ -145,6 +149,18 @@ while running:
         text = font.render("GAME OVER", True, (255, 0, 0))
         rect = text.get_rect(center=(WIDTH//2, HEIGHT//2))
         screen.blit(text, rect)
+
+        small_font = pygame.font.SysFont("monospace", 30)
+        restart_text = small_font.render("Press Enter to restart", True, WHITE)
+        restart_rect = restart_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 50))
+        screen.blit(restart_text, restart_rect)
+
+        if keys[RESTART_KEY]:
+            # RESET GAME
+            GAMEOVER = False
+            ship = Ship(spaceship)
+            bullets = []
+            asteroids = [Asteroid(asteroid_img) for _ in range(5)]
 
     pygame.display.flip()
 
