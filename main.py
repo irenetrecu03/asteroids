@@ -89,14 +89,33 @@ class Asteroid:
         self.x %= WIDTH
         self.y %= HEIGHT
 
+    def break_apart(self):
+        new_asteroids = []
+        if self.size > 30:
+            for _ in range(2):
+                a = Asteroid(asteroid_img)
+                a.size = random.randint(21, 30)
+                a.img = pygame.transform.scale(asteroid_img, (a.size * 2, a.size * 2))
+                a.x, a.y = self.x, self.y
+                new_asteroids.append(a)
+        elif 20 < self.size <= 30:
+            for _ in range(2):
+                a = Asteroid(asteroid_img)
+                a.size = random.randint(15, 20)
+                a.img = pygame.transform.scale(asteroid_img, (a.size * 2, a.size * 2))
+                a.x, a.y = self.x, self.y
+                new_asteroids.append(a)
+        return new_asteroids
+
     def draw(self):
         rect = self.img.get_rect(center=(self.x, self.y))
         screen.blit(self.img, rect.topleft)
 
 # Game setup
+NUM_ASTEROIDS = 7
 ship = Ship(spaceship)
 bullets = []
-asteroids = [Asteroid(asteroid_img) for _ in range(5)]
+asteroids = [Asteroid(asteroid_img) for _ in range(NUM_ASTEROIDS)]
 
 GAMEOVER = False
 RESTART_KEY = pygame.K_RETURN
@@ -115,27 +134,29 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.KEYDOWN:
+            # fire one bullet when pressing space
             if event.key == pygame.K_SPACE and not GAMEOVER:
                 if len(bullets) < 5:
                     bullets.append(Bullet(ship.x, ship.y, ship.angle - 90))
+            # restart game after failing and pressing Enter
             elif event.key == RESTART_KEY and GAMEOVER:
                 # Reset game
                 GAMEOVER = False
                 ship = Ship(spaceship)
                 bullets = []
-                asteroids = [Asteroid(asteroid_img) for _ in range(5)]
+                asteroids = [Asteroid(asteroid_img) for _ in range(NUM_ASTEROIDS)]
                 SCORE = 0
 
     if not GAMEOVER:
-        # Input
-        if keys[pygame.K_LEFT]: ship.rotate(-1)
-        if keys[pygame.K_RIGHT]: ship.rotate(1)
-        if keys[pygame.K_UP]: ship.thrust()
+        if keys[pygame.K_LEFT]: ship.rotate(-1) # rotate ship to the left
+        if keys[pygame.K_RIGHT]: ship.rotate(1) # rotate ship to the right
+        if keys[pygame.K_UP]: ship.thrust() # move ship forward
 
         # Update
         ship.move()
         for bullet in bullets[:]:
             bullet.move()
+            # remove out-of-bounds bullets
             if bullet.x < 0 or bullet.x > WIDTH or bullet.y < 0 or bullet.y > HEIGHT:
                 bullets.remove(bullet)
 
@@ -147,12 +168,10 @@ while running:
                 dist_bullet_asteroid = math.hypot(asteroid.x - bullet.x, asteroid.y - bullet.y)
                 if dist_bullet_asteroid < 20 + asteroid.size:
                     SCORE += asteroid.score
-                    # remove asteroid
                     del asteroids[ast_idx]
-                    # remove bullet
                     del bullets[bullet_idx]
-                    # add a new asteroid
-                    asteroids.append(Asteroid(asteroid_img))
+                    new_asteroids = asteroid.break_apart()
+                    asteroids.extend(new_asteroids)
                     break
 
             # ship-asteroid collision check
