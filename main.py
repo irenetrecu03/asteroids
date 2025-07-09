@@ -72,6 +72,10 @@ class Asteroid:
     def __init__(self, image):
         self.size = random.randint(15, 40)
         self.img = pygame.transform.scale(image, (self.size*2, self.size*2))
+
+        # calculate score of the asteroid based on size
+        self.score = 10 if self.size < 20 else 20 if (20 < self.size < 30) else 50
+
         self.x = random.randint(0, WIDTH)
         self.y = random.randint(0, HEIGHT)
         speed = random.uniform(1.5, 2.0)
@@ -96,6 +100,9 @@ asteroids = [Asteroid(asteroid_img) for _ in range(5)]
 
 GAMEOVER = False
 RESTART_KEY = pygame.K_RETURN
+
+# initialise player's score
+SCORE = 0
 
 running = True
 while running:
@@ -127,13 +134,24 @@ while running:
             if bullet.x < 0 or bullet.x > WIDTH or bullet.y < 0 or bullet.y > HEIGHT:
                 bullets.remove(bullet)
 
-        for asteroid in asteroids:
+        for asteroid in asteroids[:]:
             asteroid.move()
 
-        # Collision check
-        for asteroid in asteroids:
-            dist = math.hypot(ship.x - asteroid.x, ship.y - asteroid.y)
-            if dist < 25 + asteroid.size:
+            # bullet-asteroid collision check
+            for bullet in bullets[:]:
+                dist_bullet_asteroid = math.hypot(asteroid.x - bullet.x, asteroid.y - bullet.y)
+                if dist_bullet_asteroid < 20 + asteroid.size:
+                    SCORE += asteroid.score
+                    asteroids.remove(asteroid)
+                    # remove bullet
+                    bullets.remove(bullet)
+                    # add a new asteroid
+                    asteroids.append(Asteroid(asteroid_img))
+                    break
+
+            # ship-asteroid collision check
+            dist_ship_asteroid = math.hypot(ship.x - asteroid.x, ship.y - asteroid.y)
+            if dist_ship_asteroid < 25 + asteroid.size:
                 GAMEOVER = True
                 break
 
@@ -156,11 +174,16 @@ while running:
         screen.blit(restart_text, restart_rect)
 
         if keys[RESTART_KEY]:
-            # RESET GAME
+            # Reset game if Enter if pressed
             GAMEOVER = False
             ship = Ship(spaceship)
             bullets = []
             asteroids = [Asteroid(asteroid_img) for _ in range(5)]
+            SCORE = 0
+
+    score_font = pygame.font.SysFont("monospace", 30)
+    score_text = score_font.render(f"Score: {SCORE}", True, WHITE)
+    screen.blit(score_text, (10, 10))
 
     pygame.display.flip()
 
