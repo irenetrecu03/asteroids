@@ -78,7 +78,16 @@ class Asteroid:
 
         self.x = random.randint(0, WIDTH)
         self.y = random.randint(0, HEIGHT)
-        speed = random.uniform(1.5, 2.0)
+
+        # speed of the asteroid depends on its size
+        # the smaller the asteroid, the faster it goes
+        if self.size > 30:
+            speed = random.uniform(1.5, 2.0)
+        elif 20 < self.size <= 30:
+            speed = random.uniform(2.0, 2.5)
+        else:
+            speed = random.uniform(2.5, 3.0)
+
         angle = random.uniform(0, 2 * math.pi)
         self.vel_x = math.cos(angle) * speed
         self.vel_y = math.sin(angle) * speed
