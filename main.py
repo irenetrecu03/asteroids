@@ -29,6 +29,8 @@ class Ship:
         self.angle = 0
         self.vel_x = 0
         self.vel_y = 0
+        self.lives = 3
+        self.invulnerable_frames = 0
 
     def rotate(self, direction):
         self.angle += direction * 5
@@ -45,8 +47,14 @@ class Ship:
         self.y %= HEIGHT
         self.vel_x *= 0.9
         self.vel_y *= 0.9
+        if self.invulnerable_frames > 0:
+            self.invulnerable_frames -= 1
 
     def draw(self):
+        if self.invulnerable_frames > 0 and (self.invulnerable_frames // 10) % 2 == 0:
+            # skip drawing this frame (blink) when game resets
+            return
+
         rotated_image = pygame.transform.rotate(self.img, -self.angle)
         rect = rotated_image.get_rect(center=(self.x, self.y))
         screen.blit(rotated_image, rect.topleft)
@@ -152,6 +160,7 @@ while running:
                 # Reset game
                 GAMEOVER = False
                 ship = Ship(spaceship)
+                ship.lives = 3 # ensure it has 3 lives at the start
                 bullets = []
                 asteroids = [Asteroid(asteroid_img) for _ in range(NUM_ASTEROIDS)]
                 SCORE = 0
@@ -185,8 +194,21 @@ while running:
 
             # ship-asteroid collision check
             dist_ship_asteroid = math.hypot(ship.x - asteroid.x, ship.y - asteroid.y)
-            if dist_ship_asteroid < 25 + asteroid.size:
-                GAMEOVER = True
+            # if dist_ship_asteroid < 25 + asteroid.size:
+            #     ship.lives -= 1
+            #     if ship.lives == 0:
+            #         GAMEOVER = True
+            #     break
+            if dist_ship_asteroid < 25 + asteroid.size and ship.invulnerable_frames == 0:
+                ship.lives -= 1
+                if ship.lives == 0:
+                    GAMEOVER = True
+                else:
+                    # reset ship position & velocity
+                    ship.x, ship.y = WIDTH // 2, HEIGHT // 2
+                    ship.vel_x, ship.vel_y = 0, 0
+                    ship.invulnerable_frames = 120  # 2 seconds at 60 fps
+                    bullets.clear()
                 break
 
     # Draw
@@ -209,7 +231,14 @@ while running:
 
     score_font = pygame.font.SysFont("monospace", 30)
     score_text = score_font.render(f"Score: {SCORE}", True, WHITE)
+    # top left
     screen.blit(score_text, (10, 10))
+
+    lives_font = pygame.font.SysFont("monospace", 20)
+    lives_text = lives_font.render(f"Lives: {ship.lives}", True, WHITE)
+    # top right
+    lives_rect = lives_text.get_rect()
+    screen.blit(lives_text, (WIDTH - lives_rect.width - 10, 10))
 
     pygame.display.flip()
 
